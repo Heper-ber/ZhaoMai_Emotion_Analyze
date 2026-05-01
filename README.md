@@ -32,4 +32,4 @@
 - **面向对象架构：** 高内聚低耦合设计，解耦渲染层 (`main.py`)、网络架构层 (`emotion_net.py`) 与映射层 (`color_mapping.py`)。
 
 ---
-*Created by [你的名字/ID] - 致力于探索文本背后的数字生命。*
+*Created by Heper-ber - 致力于探索文本背后的数字生命。*
