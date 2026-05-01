@@ -1,0 +1,2 @@
+# ZhaoMai_Emotion_Analyze
+利用一个三级情绪网构建的文本情绪分析模型
