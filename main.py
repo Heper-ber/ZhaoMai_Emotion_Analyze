@@ -1,18 +1,19 @@
 import pygame
 import time
 import math
+import random
 from text_extractor import get_zhaomai_fragments
 from color_mapping import ZhaoMaiEmotionalState
 from emotion_net import ThreeLevelEmotionNet
 
-# 1. 全局配置 (强制使用项目相对路径，便于跨平台部署)
+# 系统常量与路径配置
 DOC_PATH = "./data/最后的篝火晚会.docx"
 BG_PATH = "./assets/background.jpg"
 FONT_SIZE = 33
 TEXT_WIDTH = 1000
 
 def draw_minimalist_text(surface, text, font, color, center_pos):
-    """前端渲染：极简文本渲染流（处理自动换行与居中对齐）"""
+    """前端渲染：实现极简主义的文字自动换行与居中对齐排版"""
     lines = []
     current_line = ""
     for char in text:
@@ -36,43 +37,85 @@ def draw_minimalist_text(surface, text, font, color, center_pos):
         start_y += line_height
 
 def draw_heartbeat_line(surface, color, pulse_rate, amp, offset):
-    """视觉特效：计算波形位移并渲染带外发光效果的物理级波纹"""
+    """
+    🌊 物理波纹渲染器：基于微观张力无级变速
+    引入了平滑噪音因子(noise_factor)，当张力极高时，波浪会产生连贯的心悸感，而非生硬抽搐。
+    """
     points = []
+
+    # 计算一个噪音因子：心率越快，噪音平滑增加
+    noise_factor = max(0, (pulse_rate - 6) / 10.0)
 
     for x in range(0, 1285, 5):
         y = 650 + math.sin(x * 0.04 + offset) * amp
-        if pulse_rate > 10:
-            y += (math.sin(x * 0.1) * amp * 0.3)
+        if noise_factor > 0:
+            # 噪音受张力因子严格控制
+            y += (math.sin(x * 0.15) * amp * 0.5 * noise_factor)
         points.append((x, y))
 
     if len(points) > 1:
+        # 渲染底层的高级外发光辉光效果
         glow_surf = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         glow_color = (*color, 100)
         pygame.draw.lines(glow_surf, glow_color, False, points, width=12)
         surface.blit(glow_surf, (0, 0))
+        # 渲染清晰的主心电图线条
         pygame.draw.lines(surface, color, False, points, width=5)
 
+def draw_narrative_arc(surface, macro_tensions, current_section, font):
+    """
+    📊 上帝视角：渲染宏观叙事张力弧（剧本心电图）
+    直观展示小说命运的起承转合。
+    """
+    if not macro_tensions: return
+    max_t = max(macro_tensions)
+    if max_t == 0: max_t = 1
+
+    start_x = 980
+    start_y = 150
+    max_h = 80
+    bar_w = 15
+    gap = 8
+
+    # 渲染图表标题
+    try:
+        small_font = pygame.font.SysFont("arial", 16)
+        title_surf = small_font.render("Macro Narrative Arc (Section Tension)", True, (180, 180, 180))
+        surface.blit(title_surf, (start_x - 10, start_y - max_h - 25))
+    except:
+        pass
+
+    # 渲染张力柱状图
+    for i, t in enumerate(macro_tensions):
+        h = (t / max_t) * max_h
+        rect_x = start_x + i * (bar_w + gap)
+        rect_y = start_y - h
+
+        # 进度指示器：当前章节标红高亮
+        if (i + 1) == current_section:
+            pygame.draw.rect(surface, (255, 80, 80), (rect_x, rect_y, bar_w, h))
+        else:
+            s = pygame.Surface((bar_w, h))
+            s.set_alpha(90)
+            s.fill((150, 150, 150))
+            surface.blit(s, (rect_x, rect_y))
 
 def main():
+    # 1. 启动情绪特征映射引擎
     engine = ZhaoMaiEmotionalState()
-    
-    # 初始化数据流
     raw_fragments = get_zhaomai_fragments(DOC_PATH)
-    print(f"成功加载文本切片: {len(raw_fragments)} 段。")
     if not raw_fragments:
         return
 
-    # 启动网络拓扑分析
-    print("正在实例化三级情感提取网络...")
+    # 2. 将文本灌入三级嵌套网络，完成全书的张力微积分运算
     emotion_net = ThreeLevelEmotionNet(raw_fragments, engine)
     fragments = emotion_net.processed_fragments
-    print(f"全局网络基调已锁定: RGB {emotion_net.get_global_net_color()}")
-    print("启动图形渲染引擎...")
+    macro_tensions = emotion_net.macro_tensions
 
-    # Pygame 上下文初始化
+    # 3. 初始化 Pygame 放映机
     pygame.init()
     screen = pygame.display.set_mode((1280, 720))
-    pygame.display.set_caption("ZhaoMai Emotion Engine: Runtime Visualization")
+    pygame.display.set_caption("ZhaoMai: Dual-Layer Expectation Engine (Minimalist Ver.)")
 
     try:
         font = pygame.font.SysFont(["microsoftyahei", "SimHei"], FONT_SIZE)
@@ -89,25 +132,28 @@ def main():
     bg_mask = pygame.Surface((1280, 720)).convert_alpha()
     bg_mask.fill((10, 12, 18, 110))
 
-    # 物理引擎时钟与状态缓存
     clock = pygame.time.Clock()
     global_offset = 0.0
     current_pen_color = list(emotion_net.get_global_net_color())
-    current_bg_color = list(emotion_net.get_global_net_color()) 
-    current_rate = 5.0
-    current_amp = 20.0
+    current_bg_color = list(emotion_net.get_global_net_color())
 
-    # 运行时主循环
+    # 🔥 初始状态：设定为极其平静的微波起伏
+    current_rate = 2.0
+    current_amp = 8.0
+
+    # 4. 进入核心渲染流
     for item in fragments:
         section_id = item['section_id']
-
-        target_bg_color = emotion_net.get_middle_net_color(section_id)  
+        target_bg_color = emotion_net.get_middle_net_color(section_id)
         target_color = emotion_net.get_fused_small_color(item['words'], target_bg_color)
 
-        target_rate = engine.get_pulse_rate(item['words'])
-        target_amp, _, _ = engine.get_wave_params(item['words'], target_rate)
+        # 实时获取当前句子的微观张力
+        micro_tension = emotion_net.get_micro_tension(target_color, target_bg_color)
 
-        # 动态展示时长控制：给予足够的情绪沉淀时间
+        # 🔥 柔和映射：用微观张力动态计算目标波浪的频率和振幅
+        target_rate = max(1.5, min(12.0, 1.5 + micro_tension / 15.0))
+        target_amp = max(8.0, min(35.0, 8.0 + micro_tension / 4.0))
+
         display_duration = max(3.5, len(item['text']) * 0.12)
         start_time = time.time()
 
@@ -120,7 +166,7 @@ def main():
             dt = clock.tick(60) / 1000.0
             global_offset += current_rate * 2 * dt
 
-            # 执行双重线性插值，平滑色彩切换
+            # 色彩的阻尼平滑插值（呼吸感过渡）
             for i in range(3):
                 current_pen_color[i] += (target_color[i] - current_pen_color[i]) * 0.05
                 current_bg_color[i] += (target_bg_color[i] - current_bg_color[i]) * 0.03
@@ -128,23 +174,26 @@ def main():
             draw_rgb = (int(current_pen_color[0]), int(current_pen_color[1]), int(current_pen_color[2]))
             draw_bg_rgb = (int(current_bg_color[0]), int(current_bg_color[1]), int(current_bg_color[2]))
 
-            current_rate += (target_rate - current_rate) * 0.03
-            current_amp += (target_amp - current_amp) * 0.03
+            # 波浪物理参数的平滑插值过渡
+            current_rate += (target_rate - current_rate) * 0.015
+            current_amp += (target_amp - current_amp) * 0.015
 
-            # 屏幕渲染管道
+            # ---------------- 图像绘制 ----------------
             screen.blit(bg, (0, 0))
-
+            
+            # 动态环境滤镜层
             emotion_overlay = pygame.Surface((1280, 720))
             emotion_overlay.fill(draw_bg_rgb)
             emotion_overlay.set_alpha(150)
             screen.blit(emotion_overlay, (0, 0))
-
             screen.blit(bg_mask, (0, 0))
-            
-            draw_heartbeat_line(screen, draw_rgb, current_rate, current_amp, global_offset)
 
-            text_color = [224, 224, 224]
-            draw_minimalist_text(screen, item['text'], font, text_color, (640, 360))
+            text_pos = (640, 360)
+
+            # 渲染各个图层
+            draw_heartbeat_line(screen, draw_rgb, current_rate, current_amp, global_offset)
+            draw_minimalist_text(screen, item['text'], font, [224, 224, 224], text_pos)
+            draw_narrative_arc(screen, macro_tensions, section_id, font)
 
             pygame.display.flip()
 
