@@ -1,6 +1,10 @@
 import jieba.analyse
+import math
 
-# 场景意象锚点 (Plot Anchors) 用于边界探测
+# ==========================================
+# 📍 情节锚点 (Plot Anchors)
+# 用于将长文本自动切分为 10 个“中网”章节。
+# ==========================================
 PLOT_ANCHORS = {
     1: ["海浪", "礁石", "泡沫", "滨海路"],
     2: ["客栈", "篝火", "木柴", "酒精", "老板"],
@@ -18,24 +22,26 @@ PLOT_ANCHORS = {
 
 class ThreeLevelEmotionNet:
     """
-    架构设计：三级嵌套特征融合网络 (3-Tier Hierarchical Emotion Network)
-    层级说明：
-    - 大网 (Global Net)：提取全书性格底色 (Base Context)
-    - 中网 (Middle Net)：提取各切片情节的氛围光 (Scene Atmosphere)
-    - 小网 (Small Net)：即时情绪跳动融合 (Instantaneous Fluctuation)
+    🧠 三级嵌套特征融合网络 (Three-Level Emotion Net)
+    负责文本的情感织网、多层特征提取，以及基于计算叙事学的“张力（期望偏差）”建模。
     """
+
     def __init__(self, fragments, engine):
         self.engine = engine
-        # 1. 初始化模块：片段分词与章节边界探测
         self.processed_fragments = self._partition_fragments(fragments)
-        # 2. 全局层：计算宏观叙事基调
+        
+        # 1. 构建大网：提取全书宿命底色
         self.global_base = self._build_global_net()
-        # 3. 局部层：计算特定场景环境影响向量
+        
+        # 2. 构建中网：提取每个章节的环境氛围
         self.middle_nets = {}
         self._build_middle_nets()
 
+        # 🔥 3. 宏观张力预计算：在初始化时，直接把全书的“剧本心电图”算好并存储
+        self.macro_tensions = self._build_macro_tensions()
+
     def _partition_fragments(self, raw_fragments):
-        """叙事边界识别：基于意象锚点自动为文本切片打标 (section_id)"""
+        """根据锚点词，将零散的文本片段映射到对应的章节 ID"""
         current_section = 1
         processed = []
         for f in raw_fragments:
@@ -49,22 +55,20 @@ class ThreeLevelEmotionNet:
         return processed
 
     def _build_global_net(self):
-        """构建大网：利用 TF-IDF (jieba.analyse) 提取全局性格底色"""
+        """大网计算：扫描全书，提取 Top50 核心意象，融合出全书的基准 RGB（宿命底色）"""
         all_text = "".join([f["text"] for f in self.processed_fragments])
         keywords = jieba.analyse.extract_tags(all_text, topK=50)
         matched_colors = [self.engine.color_db[w] for w in keywords if w in self.engine.color_db]
-
         if matched_colors:
             avg_r = sum(c[0] for c in matched_colors) // len(matched_colors)
             avg_g = sum(c[1] for c in matched_colors) // len(matched_colors)
             avg_b = sum(c[2] for c in matched_colors) // len(matched_colors)
             return [avg_r, avg_g, avg_b]
-        return [112, 128, 144]
+        return [112, 128, 144] # 默认冷灰蓝色
 
     def _build_middle_nets(self):
-        """构建中网：计算章节局部色彩，并执行 Alpha Blending 融合机制"""
+        """中网计算：提取各个章节的局部背景色，并与大网底色进行 7:3 加权融合"""
         section_texts = {i: "" for i in range(1, 11)}
-
         for f in self.processed_fragments:
             sid = f["section_id"]
             if sid in section_texts:
@@ -83,47 +87,80 @@ class ThreeLevelEmotionNet:
                 local_g = sum(c[1] for c in matched_colors) // len(matched_colors)
                 local_b = sum(c[2] for c in matched_colors) // len(matched_colors)
 
-                # 核心机制：环境基因渗透 (Alpha Blending)
-                # 算法假设：人物情绪受"宿命底色(30%)"与"当前境遇(70%)"共同影响
-                core_weight = 0.3
-                local_weight = 0.7
+                core_weight = 0.3  # 30% 宿命底色牵制
+                local_weight = 0.7 # 70% 当前章节氛围主导
 
                 final_r = int((self.global_base[0] * core_weight) + (local_r * local_weight))
                 final_g = int((self.global_base[1] * core_weight) + (local_g * local_weight))
                 final_b = int((self.global_base[2] * core_weight) + (local_b * local_weight))
-
                 self.middle_nets[sid] = [final_r, final_g, final_b]
             else:
                 self.middle_nets[sid] = self.global_base
 
-    # ================= 供外部渲染调用的接口 =================
+    def _build_macro_tensions(self):
+        """
+        🔥 核心算法：双重引力宏观张力计算 (Dual-Gravity Macro Tension)
+        基于色彩空间的欧几里得距离，量化文学作品的宏观“期望偏差”。
+        """
+        tensions = []
+        middle_colors = [self.get_middle_net_color(i) for i in range(1, 11)]
+
+        # 权重分配：70% 受上一章剧情惯性影响，30% 受全书宿命底色影响
+        w_past = 0.7
+        w_fate = 0.3
+
+        for i in range(len(middle_colors)):
+            c_current = middle_colors[i]
+
+            # 1. 宿命张力 (Fate Tension)：当前环境偏离全书主旨的距离
+            dist_fate = math.sqrt(sum((a - b) ** 2 for a, b in zip(c_current, self.global_base)))
+
+            # 2. 剧情张力 (Past Tension)：当前环境与上一章的反差程度
+            if i == 0:
+                # 第一章的“过去”即为这个世界的初始状态（大网），保持数学对称
+                dist_past = dist_fate
+            else:
+                c_prev = middle_colors[i - 1]
+                dist_past = math.sqrt(sum((a - b) ** 2 for a, b in zip(c_current, c_prev)))
+
+            # 3. 加权融合：得出最终的宏观叙事偏差值
+            final_tension = (dist_past * w_past) + (dist_fate * w_fate)
+            tensions.append(final_tension)
+
+        return tensions
+
+    # ================= 供外部渲染调用的 API 接口 =================
 
     def get_global_net_color(self):
-        """获取全书宿命底色"""
         return self.global_base
 
     def get_middle_net_color(self, section_id):
-        """获取章节当前境遇氛围色"""
         return self.middle_nets.get(section_id, self.global_base)
 
     def get_small_net_color(self, words):
-        """获取单句瞬时跳动色"""
+        """将当前文本句子转化为基础 RGB 颜色"""
         hex_color = self.engine.update(words)
-        rgb = tuple(int(hex_color[i:i + 2], 16) for i in (1, 3, 5)) 
+        rgb = tuple(int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
         return rgb
 
     def get_fused_small_color(self, words, current_mid_color):
-        """
-        三级融合输出：计算中网环境约束下的小网瞬时爆发表现
-        """
+        """小网融合：将当前动作颜色与场景中网颜色以 8:2 融合，得到最终画笔颜色"""
         raw_small = self.get_small_net_color(words)
-        
-        # 权重配比：保留 80% 瞬时灵敏度，施加 20% 环境平滑约束
         s_w, m_w = 0.8, 0.2
-
         fused_color = [
             int(current_mid_color[0] * m_w + raw_small[0] * s_w),
             int(current_mid_color[1] * m_w + raw_small[1] * s_w),
             int(current_mid_color[2] * m_w + raw_small[2] * s_w)
         ]
         return fused_color
+
+    def get_micro_tension(self, small_color, mid_color):
+        """
+        🔥 核心逻辑：计算微观内部期待 (Micro Tension)
+        计算：小网颜色（动作/情绪）与 中网颜色（环境氛围）的欧几里得距离。
+        该值将直接驱动前端波浪的震动频率与振幅。
+        """
+        dr = small_color[0] - mid_color[0]
+        dg = small_color[1] - mid_color[1]
+        db = small_color[2] - mid_color[2]
+        return math.sqrt(dr ** 2 + dg ** 2 + db ** 2)
