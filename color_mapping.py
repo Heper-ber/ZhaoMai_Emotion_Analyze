@@ -1,5 +1,4 @@
 import math
-import random
 
 class ZhaoMaiEmotionalState:
     """
@@ -7,7 +6,7 @@ class ZhaoMaiEmotionalState:
     核心逻辑：基于预设词典，将非结构化文本的瞬时情绪映射为 RGB 色彩，并利用线性插值控制渐变平滑度。
     """
     def __init__(self):
-        # 初始基准色：设定为冷色调（大连海边阴天大桥的石板灰）
+        # 初始基准色：设定为冷色调（海边阴天大桥的石板灰）
         self.current_rgb = [112, 128, 144]  
         self.step_count = 0
         self.default_decay = 0.05
@@ -60,14 +59,10 @@ class ZhaoMaiEmotionalState:
         }
 
     def update(self, words):
-        """
-        核心渲染流：处理情绪急转弯与色彩平滑过渡
-        :param words: 当前句子提取的关键词列表
-        :return: 格式化后的 HEX 颜色代码
-        """
+        """核心卷积算法：仅负责颜色过渡与突变冲激"""
         self.step_count += 1
 
-        # 若无情绪特征，执行衰减逻辑（回归全局底色），维持情感惯性
+        # 1. 情感阻尼：无情绪词时，缓慢回落到环境基底色
         if not words:
             base_rgb = [112, 128, 144]
             self.current_rgb = [
@@ -76,22 +71,21 @@ class ZhaoMaiEmotionalState:
             ]
             return "#{:02x}{:02x}{:02x}".format(*self.current_rgb)
 
-        # 1. 颜色池聚合：计算命中特征的色彩均值
+        # 2. 计算目标词汇颜色的均值
         matched_colors = [self.color_db[w] for w in words if w in self.color_db]
         if not matched_colors:
             return "#{:02x}{:02x}{:02x}".format(*self.current_rgb)
 
         target_rgb = [sum(x) // len(matched_colors) for x in zip(*matched_colors)]
 
-        # 2. 动态张力权重分配 (Dynamic Tension Control)
-        # 定义具有高情绪阈值的爆发力关键词
+        # 3. 颜色突发冲激机制（仅影响小网颜色跳跃，不直接控制波浪）
         impact_words = ["抿嘴一笑", "无所谓", "哭腔", "逃", "心跳", "阿勒泰", "攥紧", "扑闪", "夕阳", "爱上你了"]
+        alpha = 0.15 # 基础权重：平滑渐变
 
-        alpha = 0.15 # 基础渐变权重
         if any(w in words for w in impact_words):
-            alpha = 0.9 # 命中冲击词，权重拉满，实现“瞬时变色”视觉冲击
+            alpha = 0.9 # 冲激权重：瞬间变色，打破平滑
 
-        # 3. 线性插值计算 (Lerp)
+        # 4. 线性插值计算当前颜色
         self.current_rgb = [
             int((1 - alpha) * self.current_rgb[0] + alpha * target_rgb[0]),
             int((1 - alpha) * self.current_rgb[1] + alpha * target_rgb[1]),
@@ -99,24 +93,3 @@ class ZhaoMaiEmotionalState:
         ]
 
         return "#{:02x}{:02x}{:02x}".format(*self.current_rgb)
-
-    def get_pulse_rate(self, words):
-        """物理属性映射：依据情绪紧张度计算波段频率"""
-        fast_words = ["攥紧", "逃", "哭腔", "语速奇快", "真空", "黏糊糊", "0和1", "颤抖", "爱上你了"]
-        slow_words = ["阿勒泰", "静静", "威士忌", "数心跳", "安宁", "抿嘴一笑",
-                      "朝霞", "在听吗", "呼吸", "持久", "火焰", "旧粮仓", "泥泞",
-                      "爽朗", "理查德", "易拉罐", "小猫", "像个孩子", "心跳"]
-
-        if any(w in words for w in fast_words):
-            return 15.0  # 极速、焦虑的跳动
-        if any(w in words for w in slow_words):
-            return 1.5   # 缓慢、深沉的呼吸
-        return 5.0       # 正常叙事节奏
-
-    def get_wave_params(self, words, pulse_rate):
-        """物理属性映射：输出视觉波形参数 (振幅, 密度, 噪声)"""
-        if pulse_rate >= 15:
-            return (45, 0.3, 15)  # 极度刺出，表现混乱与崩溃
-        if pulse_rate <= 2:
-            return (5, 0.05, 1)   # 微弱波动，表现极度克制与宁静
-        return (20, 0.12, 6)      # 中等常规力度
