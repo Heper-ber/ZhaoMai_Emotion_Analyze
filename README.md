@@ -1,7 +1,15 @@
 # ZhaoMai: Textual Emotion Development Projector 
 # (赵麦：文本情绪显影放映机)
 
-> 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原创短篇小说《最后的篝火晚会》。
+> 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原
+
+https://github.com/user-attachments/assets/2d6f716e-9fb4-4579-94c5-e7999c84718b
+
+
+
+
+
+创短篇小说《最后的篝火晚会》。
 > 与传统的关键词频率统计不同，本项目旨在打破“文学创作”与“机器感知”的壁垒，通过一套自研的情感显影算法，将小说的深层心理叙事转化为可视化的动态视觉场域。
 
 ### 📢 [版本迭代说明：v1.0 to v2.0 Dual-Gravity]
@@ -14,14 +22,27 @@
 #### 🌊 场景一：深海沉溺（平静微澜）
 > **低张力状态**：色彩与环境高度契合，波纹呈现平缓的呼吸感。
 
-<video src="assets/demo1_v2.mp4" width="100%" controls></video>
+
+
+https://github.com/user-attachments/assets/c9384e9f-23b4-4fe2-9ef9-06fe8ece5c01
+
+
 
 ---
 
 #### ⚡ 场景二：午夜逃亡（心悸波纹）
 > **高张力状态**：情绪产生剧烈冲突，算法驱动波纹产生无级变速。
 
-<video src="assets/demo2_v2.mp4" width="100%" controls></video>
+
+
+
+
+https://github.com/user-attachments/assets/fabe511c-c17a-4481-85c9-cae0fe2c611e
+
+
+
+
+
 
 ---
 
