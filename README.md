@@ -3,8 +3,6 @@
 
 > 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原
 
-https://github.com/user-attachments/assets/2d6f716e-9fb4-4579-94c5-e7999c84718b
-
 
 
 
