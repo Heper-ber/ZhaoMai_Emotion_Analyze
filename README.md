@@ -2,7 +2,7 @@
 # (赵麦：文本情绪显影放映机)
 
 > 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原
-
+![访客统计](https://profile-counter.glitch.me/Heper-ber/count.svg)
 
 
 
