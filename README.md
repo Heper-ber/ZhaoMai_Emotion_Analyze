@@ -1,13 +1,7 @@
 # ZhaoMai: Textual Emotion Development Projector 
 # (赵麦：文本情绪显影放映机)
 
-> 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原
-![访客统计](https://profile-counter.glitch.me/Heper-ber/count.svg)
-
-
-
-
-创短篇小说《最后的篝火晚会》。
+> 本项目是一个跨学科的数字人文（Digital Humanities）探索项目。项目所使用的文本数据来源于原创短篇小说《最后的篝火晚会》。
 > 与传统的关键词频率统计不同，本项目旨在打破“文学创作”与“机器感知”的壁垒，通过一套自研的情感显影算法，将小说的深层心理叙事转化为可视化的动态视觉场域。
 
 ### 📢 [版本迭代说明：v1.0 to v2.0 Dual-Gravity]
